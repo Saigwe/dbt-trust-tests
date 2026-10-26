@@ -126,8 +126,8 @@ TRUST_TESTS_TARGET=postgres python run.py   # Postgres (PGHOST, PGUSER, PGPASSWO
 ```
 
 ## Used in
-- [health-claims-warehouse](https://github.com/Saigwe/health-claims-warehouse): `scd2_valid`, `point_in_time_valid`, `reconciles_to`, `no_columns_matching`, `hashed_identifier` replace hand-written tests, on DuckDB and Postgres
-- [people-training-analytics](https://github.com/Saigwe/people-training-analytics) and [semiconductor-yield-analytics](https://github.com/Saigwe/semiconductor-yield-analytics): `unique_combination` replaces a copied macro
+- [health-claims-warehouse](https://github.com/Saigwe/health-claims-warehouse): `scd2_valid` and `point_in_time_valid` replace two hand-written tests; `hashed_identifier` and `no_columns_matching` add masking checks on the gold tables; `unique_combination` replaces a copied macro. 51/51 checks pass on the real CMS data, and CI runs it on DuckDB and Postgres
+- [people-training-analytics](https://github.com/Saigwe/people-training-analytics) and [semiconductor-yield-analytics](https://github.com/Saigwe/semiconductor-yield-analytics): `unique_combination` replaces a copied macro (57/57 and 82/82 checks pass on real data)
 
 ## Design notes
 See [`docs/design_doc.md`](docs/design_doc.md) for the choices (why generic tests and not macros, why exact failure counts, dialect dispatch, versioning).
