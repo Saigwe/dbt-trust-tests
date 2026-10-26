@@ -132,5 +132,11 @@ TRUST_TESTS_TARGET=postgres python run.py   # Postgres (PGHOST, PGUSER, PGPASSWO
 ## Design notes
 See [`docs/design_doc.md`](docs/design_doc.md) for the choices (why generic tests and not macros, why exact failure counts, dialect dispatch, versioning).
 
+## Roadmap
+- [x] v0.1.0: seven tests, integration suite with exact failure counts, CI on DuckDB and Postgres × dbt 1.10 and 1.11
+- [x] Adopted by health-claims-warehouse, people-training-analytics and semiconductor-yield-analytics
+- [ ] Run the integration suite on Snowflake and BigQuery (the dialect hooks are there; it needs accounts)
+- [ ] 3-minute Loom walkthrough ([script ready](docs/walkthrough.md))
+
 ## Licence
 MIT (see `LICENSE`).
