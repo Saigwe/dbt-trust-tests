@@ -1,0 +1,4 @@
+member_sk,member_key,valid_from,valid_to
+1,m1,2024-01-01,2025-01-01
+2,m1,2025-01-01,
+3,m2,2024-01-01,

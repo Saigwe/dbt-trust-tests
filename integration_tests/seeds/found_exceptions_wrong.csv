@@ -1,0 +1,4 @@
+batch_id,reason,amount
+B1,duplicate journal,40.00
+B2,wrong fx rate,99.00
+B9,duplicate journal,1.00

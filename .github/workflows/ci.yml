@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  integration:
+    name: ${{ matrix.target }} · dbt ${{ matrix.dbt }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [duckdb, postgres]
+        dbt: ["1.10", "1.11"]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: trust_tests
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TRUST_TESTS_TARGET: ${{ matrix.target }}
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: trust_tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dbt ${{ matrix.dbt }} with the ${{ matrix.target }} adapter
+        run: pip install "dbt-core~=${{ matrix.dbt }}.0" "dbt-${{ matrix.target }}"
+      - name: Every test must pass on clean data and catch exactly the planted problems
+        working-directory: integration_tests
+        run: python run.py

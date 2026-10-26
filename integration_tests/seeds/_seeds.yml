@@ -1,0 +1,137 @@
+version: 2
+
+# Every test states what must happen: meta.expect_failures is the exact number of failing rows. 0 means the test must
+# pass; anything else means the bad data was caught exactly as planned (run.py checks both).
+
+seeds:
+  - name: ledger_subledger
+    tests:
+      - trust_tests.unique_combination:
+          name: unique_combination__passes
+          arguments: {columns: [account, month]}
+          config: {meta: {expect_failures: 0}}
+      - trust_tests.reconciles_to:
+          name: reconciles_to__tied_ledger_passes
+          arguments:
+            to: ref('ledger_gl_tied')
+            measures: {n_rows: "count(*)", amount: "sum(amount)"}
+            group_by: [account, month]
+          config: {meta: {expect_failures: 0}}
+      - trust_tests.reconciles_to:
+          name: reconciles_to__broken_ledger_fails
+          arguments:
+            to: ref('ledger_gl_broken')
+            measures: {n_rows: "count(*)", amount: "sum(amount)"}
+            group_by: [account, month]
+          config: {meta: {expect_failures: 5}}   # 4000/02 amount off by 5; 4100/01 and 4200/01 each missing on one side (x2 measures)
+      - trust_tests.reconciles_to:
+          name: reconciles_to__tolerance_absorbs_small_differences
+          arguments:
+            to: ref('ledger_gl_broken')
+            measures: {n_rows: "count(*)", amount: "sum(amount)"}
+            group_by: [account, month]
+            tolerance: 10
+          config: {meta: {expect_failures: 4}}   # the 5.00 difference is within tolerance; missing groups still fail
+      - trust_tests.reconciles_to:
+          name: reconciles_to__ungrouped_totals
+          arguments:
+            to: ref('ledger_gl_tied')
+            measures: {amount: "sum(amount)"}
+          config: {meta: {expect_failures: 0}}
+
+  - name: ledger_gl_broken
+    tests:
+      - trust_tests.unique_combination:
+          name: unique_combination__composite_key_passes
+          arguments: {columns: [account, month]}
+          config: {meta: {expect_failures: 0}}
+
+  - name: planted_exceptions
+  - name: found_exceptions_exact
+    tests:
+      - trust_tests.matches_answer_key:
+          name: matches_answer_key__exact_passes
+          arguments: {expected: ref('planted_exceptions'), key_columns: [batch_id], compare_columns: [reason, amount]}
+          config: {meta: {expect_failures: 0}}
+  - name: found_exceptions_wrong
+    tests:
+      - trust_tests.matches_answer_key:
+          name: matches_answer_key__wrong_fails
+          arguments: {expected: ref('planted_exceptions'), key_columns: [batch_id], compare_columns: [reason, amount]}
+          config: {meta: {expect_failures: 3}}   # B2 amount differs, B3 missed, B9 unexpected
+      - trust_tests.matches_answer_key:
+          name: matches_answer_key__keys_only
+          arguments: {expected: ref('planted_exceptions'), key_columns: [batch_id]}
+          config: {meta: {expect_failures: 2}}   # B3 missed, B9 unexpected; amounts not compared
+
+  - name: scd2_exclusive_good
+    tests:
+      - trust_tests.scd2_valid:
+          name: scd2_valid__exclusive_passes
+          arguments: {entity_key: member_key, valid_from: valid_from, valid_to: valid_to, current_flag: is_current}
+          config: {meta: {expect_failures: 0}}
+  - name: scd2_inclusive_good
+    tests:
+      - trust_tests.scd2_valid:
+          name: scd2_valid__inclusive_day_passes
+          arguments: {entity_key: member_key, valid_from: valid_from, valid_to: valid_to, current_flag: is_current,
+                      end_convention: inclusive_day}
+          config: {meta: {expect_failures: 0}}
+      - trust_tests.scd2_valid:
+          name: scd2_valid__wrong_convention_flags_gaps
+          arguments: {entity_key: member_key, valid_from: valid_from, valid_to: valid_to}
+          config: {meta: {expect_failures: 1}}   # read as exclusive, 31 Dec -> 1 Jan is a one-day gap
+  - name: scd2_broken
+    tests:
+      - trust_tests.scd2_valid:
+          name: scd2_valid__broken_fails
+          arguments: {entity_key: member_key, valid_from: valid_from, valid_to: valid_to, current_flag: is_current}
+          config: {meta: {expect_failures: 5}}   # overlap, gap, ends before start, two current, open-ended not last
+
+  - name: dim_member_versions
+  - name: fct_claims_pit_good
+    columns:
+      - name: member_sk
+        tests:
+          - trust_tests.point_in_time_valid:
+              name: point_in_time_valid__passes
+              arguments: {to: ref('dim_member_versions'), field: member_sk, event_at: service_date,
+                          valid_from: valid_from, valid_to: valid_to}
+              config: {meta: {expect_failures: 0}}
+  - name: fct_claims_pit_broken
+    columns:
+      - name: member_sk
+        tests:
+          - trust_tests.point_in_time_valid:
+              name: point_in_time_valid__broken_fails
+              arguments: {to: ref('dim_member_versions'), field: member_sk, event_at: service_date,
+                          valid_from: valid_from, valid_to: valid_to}
+              config: {meta: {expect_failures: 4}}   # on the end date, before the start, unknown key, before the first version
+
+  - name: raw_member_ids
+  - name: members_clean
+    tests:
+      - trust_tests.no_columns_matching:
+          name: no_columns_matching__clean_passes
+          arguments: {patterns: ['.*birth_?(dt|date).*', 'member_id', 'email.*']}
+          config: {meta: {expect_failures: 0}}
+    columns:
+      - name: member_key
+        tests:
+          - trust_tests.hashed_identifier:
+              name: hashed_identifier__md5_passes
+              arguments: {length: 32, raw_values: {relation: ref('raw_member_ids'), column: member_id}}
+              config: {meta: {expect_failures: 0}}
+  - name: members_leaky
+    tests:
+      - trust_tests.no_columns_matching:
+          name: no_columns_matching__leaky_fails
+          arguments: {patterns: ['.*birth_?(dt|date).*', 'member_id', 'email.*']}
+          config: {meta: {expect_failures: 3}}   # birth_date, Email_Address (case-insensitive), member_id
+    columns:
+      - name: member_key
+        tests:
+          - trust_tests.hashed_identifier:
+              name: hashed_identifier__leaky_fails
+              arguments: {length: 32, raw_values: {relation: ref('raw_member_ids'), column: member_id}}
+              config: {meta: {expect_failures: 4}}   # uppercase hex, 'not-a-hash', 'M003' (not hex, and a raw id)

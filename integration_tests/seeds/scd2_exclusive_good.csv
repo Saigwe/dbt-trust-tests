@@ -1,0 +1,4 @@
+member_key,valid_from,valid_to,is_current
+m1,2024-01-01,2025-01-01,false
+m1,2025-01-01,,true
+m2,2024-06-01,9999-12-31,true

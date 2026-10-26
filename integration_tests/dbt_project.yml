@@ -1,0 +1,11 @@
+name: trust_tests_integration
+version: "0.1.0"
+config-version: 2
+profile: trust_tests_integration
+seed-paths: ["seeds"]
+
+seeds:
+  trust_tests_integration:
+    +column_types:
+      month: varchar(7)
+      account: varchar(10)
