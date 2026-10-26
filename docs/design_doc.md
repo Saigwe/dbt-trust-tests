@@ -35,7 +35,7 @@ Across 17 portfolio projects I hand-wrote the same checks many times: a grain te
 
 ## 5. Results
 - 19 integration tests behave exactly as declared on DuckDB locally; CI runs them on DuckDB and Postgres with dbt 1.10 and 1.11.
-- Three projects now use the package instead of their own copies. Health Claims replaced two hand-written tests and a copied macro, and added four masking checks: 51/51 pass on the real CMS data. People & Training (57/57) and Semiconductor (82/82) dropped their copied macro.
+- Three projects now use the package instead of their own copies. Health Claims replaced two hand-written tests and a copied macro, and added five masking checks: 51/51 pass on the real CMS data. People & Training (57/57) and Semiconductor (82/82) dropped their copied macro.
 
 ## 6. Next
 - Snowflake and BigQuery runs in CI (needs warehouse credentials).
